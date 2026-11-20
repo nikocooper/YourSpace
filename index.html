@@ -1,0 +1,52 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>About Us</title>
+    </head>
+
+    <body>
+        <div id="links">
+            <a href="index.html">Home</a>
+            <a href="palate.html">Palate</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+        </div>
+
+        <h1>Welcome to YourSpace!</h1>
+        <p>Here are some recent pics:</p>
+
+        <div id="pics"></div>
+
+        <script>
+            // loads all images from pics directory
+            async function loadImages() {
+                const gallery = document.getElementById('pics');
+
+                const response = await fetch('/api/images');
+                const images = await response.json();
+
+                console.log('Images returned:', images);
+                console.log('Gallery element:', gallery);
+
+                gallery.innerHTML = '';
+
+                images.forEach(filename => {
+                    const img = document.createElement('img');
+
+                    img.src = '/pics/' + encodeURIComponent(filename);
+                    img.alt = filename;
+                    img.width = 200;
+
+                    gallery.appendChild(img);
+
+                    console.log('Added image:', img.src);
+                });
+
+                console.log('Number of images in gallery:', gallery.children.length);
+            }
+
+            loadImages();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>About Us</title>
+    </head>
+    <body>
+        <div id="links">
+            <a href="index.html">Home</a>
+            <a href="palate.html">Palate</a>
+            <a href="about.html">About</a>
+            <a href="contact.html">Contact</a>
+        </div>
+        <h1>Welcome to YourSpace!</h1>
+        <p>Draw your stuff here:</p>
+        <label for="color">Color</label>
+        <input type="color" id="color"><br>
+        <label for="size">Brush Size</label>
+        <input type="range" id="size"><br>
+        <p>Brush Shape:</p>
+
+        <input type="radio" id="square" name="shape" value="square" checked>
+        <label for="square">Square</label>
+
+        <input type="radio" id="circle" name="shape" value="circle">
+        <label for="circle">Circle</label>
+
+        <input type="radio" id="triangle" name="shape" value="triangle">
+        <label for="triangle">Triangle</label><br>
+
+        <canvas id="canv" width= "600" height= "600" style="border: 2px solid black;">
+
+        </canvas><br>
+        <label for="filename">File name:</label>
+        <input type="text" id="filename" placeholder="Enter file name">
+        <button type="button" onclick="clearC()">Clear</button>
+        <button type="button" onclick="saveC()">Save</button>
+    </body>
+    <script>
+
+        // saves the canvas to pics directory
+        async function saveC() {
+            const canvas = document.getElementById('canv');
+            const filename = document.getElementById('filename').value;
+
+            if (!filename) {
+                alert('Please enter a filename.');
+                return;
+            }
+
+            const response = await fetch('/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filename: filename,
+                    image: canvas.toDataURL('image/png')
+                })
+            });
+
+            const result = await response.text();
+            alert(result);
+        }
+
+        // clears the canvas
+        function clearC() {
+            const canvas = document.getElementById('canv');
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // draws on the canvas
+        function draw(event, canvas) {
+            const rect = canvas.getBoundingClientRect();
+
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            const color = document.getElementById('color').value;
+            const size = document.getElementById('size').value;
+
+            const shape = document.querySelector('input[name="shape"]:checked').value;
+
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = color;
+
+            if (shape === "square") {
+                ctx.fillRect(x-size/2, y-size/2, size, size);
+            }
+
+            else if (shape === "circle") {
+                ctx.beginPath();
+                ctx.arc(x, y, size / 2, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            else if (shape === "triangle") {
+                ctx.beginPath();
+                ctx.moveTo(x, y - size / 2);
+                ctx.lineTo(x - size / 2, y + size / 2);
+                ctx.lineTo(x + size / 2, y + size / 2);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        const canvas = document.getElementById('canv');
+
+
+        let drawing = false;
+
+        canvas.addEventListener('mousedown', (event) => {
+            drawing = true;
+            draw(event, canvas);  // Draw immediately on click
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            drawing = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            drawing = false;
+        });
+
+        canvas.addEventListener('mousemove', (event) => {
+            if (drawing) {
+                draw(event, canvas);
+            }
+        });
+
+    </script>
+</html>
