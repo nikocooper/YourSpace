@@ -7,56 +7,105 @@ const app = express();
 const PORT = 3000;
 
 const PICS_DIR = path.join(__dirname, 'pics');
+const POSTS_FILE = path.join(__dirname, 'posts.json');
 
-// Make sure pics directory exists
+// Make sure the pics directory and posts.json exist
 fs.mkdirSync(PICS_DIR, { recursive: true });
 
-// Allow JSON image data
-app.use(express.json({ limit: '20mb' }));
+if (!fs.existsSync(POSTS_FILE)) {
+    fs.writeFileSync(POSTS_FILE, JSON.stringify([], null, 2));
+}
 
-// Serve HTML files and images
+app.use(express.json({ limit: '20mb' }));
 app.use(express.static(__dirname));
 
-// Get list of saved images
-app.get('/api/images', (req, res) => {
-    fs.readdir(PICS_DIR, (err, files) => {
-        if (err) {
-            return res.status(500).json({ error: 'Could not read pics folder.' });
-        }
+// Get posts, newest first
+app.get('/api/posts', (req, res) => {
+    try {
+        const posts = JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
 
-        const images = files.filter(file =>
-            /\.(png|jpg|jpeg|gif|webp)$/i.test(file)
+        posts.sort((a, b) =>
+            new Date(b.createdAt) - new Date(a.createdAt)
         );
 
-        res.json(images);
-    });
+        res.json(posts);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Could not read posts.' });
+    }
 });
 
-// Save canvas image
+// Save an image and its metadata
 app.post('/save', (req, res) => {
-    let filename = path.basename(req.body.filename || '');
-    filename = filename.replace(/\.png$/i, '');
-    filename = filename.replace(/[^a-zA-Z0-9_-]/g, '');
+    const postName = (req.body.filename || '').trim();
+    const image = req.body.image;
 
-    if (!filename || !req.body.image) {
-        return res.status(400).send('Invalid filename or image.');
+    if (!postName || !image) {
+        return res.status(400).send('Invalid post name or image.');
     }
 
-    const imageData = req.body.image.replace(
-        /^data:image\/png;base64,/,
-        ''
-    );
+    // Make a safe filename from the post name
+    const safeName = postName.replace(/[^a-zA-Z0-9_-]/g, '_');
 
+    if (!safeName) {
+        return res.status(400).send('Invalid post name.');
+    }
+
+    // Add a timestamp so posts with the same name don't overwrite each other
+    const imageFilename = safeName + '-' + Date.now() + '.png';
+    const imagePath = path.join(PICS_DIR, imageFilename);
+
+    // Convert the canvas image from Base64 into a file
+    const imageData = image.replace(/^data:image\/png;base64,/, '');
     const buffer = Buffer.from(imageData, 'base64');
-    const filepath = path.join(PICS_DIR, filename + '.png');
 
-    fs.writeFile(filepath, buffer, (err) => {
+    fs.writeFile(imagePath, buffer, (err) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Error saving image.');
         }
 
-        res.send('Image saved successfully!');
+        // Create metadata for this post
+        const newPost = {
+            name: postName,
+            filename: imageFilename,
+            imagePath: '/pics/' + imageFilename,
+            createdAt: new Date().toISOString()
+        };
+
+        // Read the existing posts
+        fs.readFile(POSTS_FILE, 'utf8', (err, data) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send('Could not read posts.json.');
+            }
+
+            let posts;
+
+            try {
+                posts = JSON.parse(data);
+            } catch (parseError) {
+                console.error(parseError);
+                return res.status(500).send('posts.json contains invalid JSON.');
+            }
+
+            // Add the new post at the beginning
+            posts.unshift(newPost);
+
+            // Write the updated list back to posts.json
+            fs.writeFile(
+                POSTS_FILE,
+                JSON.stringify(posts, null, 2),
+                (err) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).send('Could not update posts.json.');
+                    }
+
+                    res.send('Post saved successfully!');
+                }
+            );
+        });
     });
 });
 

@@ -38,29 +38,42 @@
     <script>
 
         // saves the canvas to pics directory
+        
         async function saveC() {
             const canvas = document.getElementById('canv');
-            const filename = document.getElementById('filename').value;
+            const filename = document.getElementById('filename').value.trim();
 
             if (!filename) {
-                alert('Please enter a filename.');
+                alert('Please enter a post name.');
                 return;
             }
 
-            const response = await fetch('/save', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    filename: filename,
-                    image: canvas.toDataURL('image/png')
-                })
-            });
+            try {
+                const response = await fetch('/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: filename,
+                        image: canvas.toDataURL('image/png')
+                    })
+                });
 
-            const result = await response.text();
-            alert(result);
+                const result = await response.text();
+
+                if (!response.ok) {
+                    throw new Error(result);
+                }
+
+                alert(result);
+
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Could not save post: ' + error.message);
+            }
         }
+
 
         // clears the canvas
         function clearC() {

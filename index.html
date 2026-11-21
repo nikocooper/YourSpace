@@ -1,52 +1,86 @@
 
+
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>About Us</title>
-    </head>
+<head>
+    <title>About Us</title>
+</head>
 
-    <body>
-        <div id="links">
-            <a href="index.html">Home</a>
-            <a href="palate.html">Palate</a>
-            <a href="about.html">About</a>
-            <a href="contact.html">Contact</a>
-        </div>
+<body>
+    <div id="links">
+        <a href="index.html">Home</a>
+        <a href="palate.html">Palate</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+    </div>
 
-        <h1>Welcome to YourSpace!</h1>
-        <p>Here are some recent pics:</p>
+    <h1>Welcome to YourSpace!</h1>
+    <p>Here are some recent posts:</p>
 
-        <div id="pics"></div>
+    <div id="posts"></div>
 
-        <script>
-            // loads all images from pics directory
-            async function loadImages() {
-                const gallery = document.getElementById('pics');
+    <script>
+        async function loadPosts() {
+            const gallery = document.getElementById('posts');
 
-                const response = await fetch('/api/images');
-                const images = await response.json();
+            try {
+                const response = await fetch('/api/posts');
 
-                console.log('Images returned:', images);
-                console.log('Gallery element:', gallery);
+                if (!response.ok) {
+                    throw new Error('Could not retrieve posts.');
+                }
+
+                const posts = await response.json();
 
                 gallery.innerHTML = '';
 
-                images.forEach(filename => {
+                if (posts.length === 0) {
+                    gallery.textContent = 'No posts yet!';
+                    return;
+                }
+
+                posts.forEach(post => {
+                    // Container for each post
+                    const postDiv = document.createElement('div');
+
+                    postDiv.style.margin = '20px';
+                    postDiv.style.display = 'inline-block';
+                    postDiv.style.verticalAlign = 'top';
+
+                    // Post image
                     const img = document.createElement('img');
 
-                    img.src = '/pics/' + encodeURIComponent(filename);
-                    img.alt = filename;
-                    img.width = 200;
+                    img.src = post.imagePath;
+                    img.alt = post.name;
+                    img.style.width = '200px';
+                    img.style.display = 'block';
 
-                    gallery.appendChild(img);
+                    // Post name
+                    const name = document.createElement('h3');
 
-                    console.log('Added image:', img.src);
+                    name.textContent = post.name;
+
+                    // Post date
+                    const date = document.createElement('p');
+
+                    date.textContent =
+                        new Date(post.createdAt).toLocaleString();
+
+                    // Add everything to the page
+                    postDiv.appendChild(img);
+                    postDiv.appendChild(name);
+                    postDiv.appendChild(date);
+
+                    gallery.appendChild(postDiv);
                 });
 
-                console.log('Number of images in gallery:', gallery.children.length);
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                gallery.textContent = 'Could not load posts.';
             }
+        }
 
-            loadImages();
-        </script>
-    </body>
+        loadPosts();
+    </script>
+</body>
 </html>

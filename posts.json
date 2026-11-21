@@ -1,0 +1,26 @@
+[
+    {
+    "name": "Duck",
+    "filename": "duck.png",
+    "imagePath": "/pics/duck.png",
+    "createdAt": "2026-11-19T05:24:22.177Z"
+  },
+    {
+    "name": "My First Post",
+    "filename": "myfirstpost.png",
+    "imagePath": "/pics/myfirstpost.png",
+    "createdAt": "2026-11-19T21:07:56.177Z"
+  },
+    {
+    "name": "Tree",
+    "filename": "tree.png",
+    "imagePath": "/pics/tree.png",
+    "createdAt": "2026-11-20T19:05:02.177Z"
+  },
+    {
+    "name": "Mountain",
+    "filename": "mountain.png",
+    "imagePath": "/pics/mountain.png",
+    "createdAt": "2026-11-21T19:22:23.177Z"
+  }
+]
